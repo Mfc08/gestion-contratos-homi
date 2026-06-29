@@ -2,26 +2,17 @@ export async function handler(event) {
 
   try {
 
-    const body = JSON.parse(event.body || "{}");
+    const body = event.body ? JSON.parse(event.body) : {};
 
     const pregunta = body.pregunta || "";
     const contratos = body.contratos || [];
 
     const API_KEY = process.env.GEMINI_API_KEY;
 
-    if (!API_KEY) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          respuesta: "ERROR: Falta API KEY en Netlify"
-        })
-      };
-    }
-
     const url =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -33,12 +24,7 @@ export async function handler(event) {
             parts: [
               {
                 text: `
-Eres un asistente experto en contratos hospitalarios.
-
-REGLAS:
-- Usa SOLO los contratos dados
-- Responde corto y claro
-- Si falta info, dilo
+Eres un asistente de contratos hospitalarios.
 
 CONTRATOS:
 ${JSON.stringify(contratos)}
@@ -53,29 +39,25 @@ ${pregunta}
       })
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    console.log("GEMINI RESPONSE:", JSON.stringify(data));
-
-    // 👇 SEGURIDAD TOTAL (nunca undefined)
     const respuesta =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       data?.error?.message ||
-      "Sin respuesta del modelo";
+      "Sin respuesta";
 
     return {
       statusCode: 200,
       body: JSON.stringify({ respuesta })
     };
 
-  } catch (error) {
+  } catch (err) {
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        respuesta: "ERROR BACKEND: " + error.message
+        respuesta: "ERROR BACKEND: " + err.message
       })
     };
-
   }
 }

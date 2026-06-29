@@ -1,64 +1,39 @@
-export async function handler(event) {
+async function enviarPregunta() {
 
-  try {
+    const input = document.getElementById("aiPregunta");
+    const pregunta = input.value.trim();
+    if (!pregunta) return;
 
-    const { pregunta } = JSON.parse(event.body);
+    const mensajes = document.getElementById("aiMensajes");
 
-    const API_KEY = process.env.GEMINI_API_KEY;
+    mensajes.innerHTML += `<div style="text-align:right;margin:10px 0"><b>Tú:</b><br>${pregunta}</div>`;
 
-    const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+    input.value = "";
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-goog-api-key": API_KEY
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `
-Eres un asistente experto en gestión de contratos hospitalarios.
+    mensajes.innerHTML += `<div id="loadingAI" style="color:#60A5FA">Pensando...</div>`;
+    mensajes.scrollTop = mensajes.scrollHeight;
 
-Responde claro y breve.
+    try {
 
-Pregunta:
-${pregunta}
-                `
-              }
-            ]
-          }
-        ]
-      })
-    });
+        const res = await fetch("/.netlify/functions/gemini", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                pregunta,
+                contratos: CONTRATOS_RAW
+            })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    console.log("GEMINI RAW:", JSON.stringify(data));
+        document.getElementById("loadingAI").remove();
 
-    const respuesta =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      data?.error?.message ||
-      "Sin respuesta";
+        mensajes.innerHTML += `<div style="margin:10px 0"><b>IA:</b><br>${data.respuesta}</div>`;
+        mensajes.scrollTop = mensajes.scrollHeight;
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ respuesta })
-    };
+    } catch (e) {
 
-  } catch (err) {
-
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        respuesta: "Error en función Gemini"
-      })
-    };
-
-  }
-
+        document.getElementById("loadingAI").remove();
+        mensajes.innerHTML += `<div style="color:red">Error consultando IA</div>`;
+    }
 }

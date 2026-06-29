@@ -2,12 +2,41 @@ export async function handler(event) {
 
   try {
 
-    const { pregunta, contratos } = JSON.parse(event.body);
+    const { pregunta, contratos } = JSON.parse(event.body || "{}");
 
     const API_KEY = process.env.GEMINI_API_KEY;
 
+    if (!API_KEY) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          respuesta: "Falta GEMINI_API_KEY en Netlify"
+        })
+      };
+    }
+
     const url =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            {
+              text: `
+Eres un asistente de contratos hospitalarios.
+
+CONTRATOS:
+${JSON.stringify(contratos)}
+
+PREGUNTA:
+${pregunta}
+              `
+            }
+          ]
+        }
+      ]
+    };
 
     const res = await fetch(url, {
       method: "POST",
@@ -15,41 +44,30 @@ export async function handler(event) {
         "Content-Type": "application/json",
         "X-goog-api-key": API_KEY
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `
-Eres un asistente de contratos hospitalarios.
-
-Usa estos datos:
-${JSON.stringify(contratos)}
-
-Responde claro.
-
-Pregunta:
-${pregunta}
-                `
-              }
-            ]
-          }
-        ]
-      })
+      body: JSON.stringify(payload)
     });
 
     const data = await res.json();
 
-    console.log("GEMINI RESPONSE:", JSON.stringify(data));
+    console.log("FULL RESPONSE:", JSON.stringify(data));
+
+    if (data.error) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          respuesta: "ERROR API: " + data.error.message
+        })
+      };
+    }
 
     const respuesta =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-      data?.error?.message ??
-      "Sin respuesta de la IA";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ respuesta })
+      body: JSON.stringify({
+        respuesta: respuesta || "Sin respuesta de Gemini"
+      })
     };
 
   } catch (err) {
@@ -57,10 +75,8 @@ ${pregunta}
     return {
       statusCode: 500,
       body: JSON.stringify({
-        respuesta: "Error en backend"
+        respuesta: "ERROR BACKEND: " + err.message
       })
     };
-
   }
-
 }

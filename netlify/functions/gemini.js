@@ -1,39 +1,67 @@
-async function enviarPregunta() {
+export async function handler(event) {
 
-    const input = document.getElementById("aiPregunta");
-    const pregunta = input.value.trim();
-    if (!pregunta) return;
+  try {
 
-    const mensajes = document.getElementById("aiMensajes");
+    const { pregunta, contratos } = JSON.parse(event.body);
 
-    mensajes.innerHTML += `<div style="text-align:right;margin:10px 0"><b>Tú:</b><br>${pregunta}</div>`;
+    const API_KEY = process.env.GEMINI_API_KEY;
 
-    input.value = "";
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
-    mensajes.innerHTML += `<div id="loadingAI" style="color:#60A5FA">Pensando...</div>`;
-    mensajes.scrollTop = mensajes.scrollHeight;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": API_KEY
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `
+Eres un asistente experto en gestión de contratos hospitalarios.
 
-    try {
+REGLAS:
+- Usa los contratos que te doy abajo.
+- Calcula días de vencimiento si es necesario.
+- Responde claro y corto.
 
-        const res = await fetch("/.netlify/functions/gemini", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                pregunta,
-                contratos: CONTRATOS_RAW
-            })
-        });
+CONTRATOS:
+${JSON.stringify(contratos)}
 
-        const data = await res.json();
+PREGUNTA:
+${pregunta}
+                `
+              }
+            ]
+          }
+        ]
+      })
+    });
 
-        document.getElementById("loadingAI").remove();
+    const data = await res.json();
 
-        mensajes.innerHTML += `<div style="margin:10px 0"><b>IA:</b><br>${data.respuesta}</div>`;
-        mensajes.scrollTop = mensajes.scrollHeight;
+    const respuesta =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.error?.message ||
+      "Sin respuesta";
 
-    } catch (e) {
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ respuesta })
+    };
 
-        document.getElementById("loadingAI").remove();
-        mensajes.innerHTML += `<div style="color:red">Error consultando IA</div>`;
-    }
+  } catch (err) {
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        respuesta: "Error en función Gemini"
+      })
+    };
+
+  }
 }

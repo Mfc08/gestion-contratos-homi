@@ -1,4 +1,3 @@
-
 export default async (req) => {
 
   try {
@@ -9,7 +8,7 @@ export default async (req) => {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -20,11 +19,11 @@ export default async (req) => {
             parts: [
               {
                 text: `
-Eres un asistente experto en gestión hospitalaria y contratos.
+Eres un asistente experto en gestión de contratos hospitalarios.
 
-Responde de forma clara, breve y profesional.
+Responde claro y directo.
 
-Pregunta del usuario:
+Pregunta:
 ${pregunta}
                 `
               }
@@ -34,20 +33,25 @@ ${pregunta}
       })
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta";
+    console.log("RESPUESTA GEMINI:", JSON.stringify(data));
+
+    const respuesta =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text
+      || data?.error?.message
+      || "No se pudo generar respuesta";
 
     return new Response(JSON.stringify({
-      respuesta: texto
+      respuesta
     }), {
       headers: { "Content-Type": "application/json" }
     });
 
-  } catch (error) {
+  } catch (err) {
 
     return new Response(JSON.stringify({
-      respuesta: "Error en la IA"
+      respuesta: "Error en función Gemini"
     }), {
       headers: { "Content-Type": "application/json" }
     });

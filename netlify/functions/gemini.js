@@ -7,7 +7,7 @@ export async function handler(event) {
     const API_KEY = process.env.GEMINI_API_KEY;
 
     const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
       API_KEY;
 
     const response = await fetch(url, {
@@ -62,4 +62,5 @@ ${pregunta}
     };
 
   }
+
 }

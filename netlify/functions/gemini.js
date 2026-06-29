@@ -1,64 +1,57 @@
-import { GoogleGenAI } from "@google/genai";
 
-export default async (req, context) => {
+export default async (req) => {
+
   try {
-
-    if (req.method !== "POST") {
-      return new Response(
-        JSON.stringify({ error: "Método no permitido" }),
-        {
-          status: 405,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
-    }
 
     const { pregunta } = await req.json();
 
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    });
+    const API_KEY = process.env.GEMINI_API_KEY;
 
-    const respuesta = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `
-Eres un asistente experto en gestión de contratos hospitalarios.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-Debes responder de forma profesional, clara y breve.
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `
+Eres un asistente experto en gestión hospitalaria y contratos.
+
+Responde de forma clara, breve y profesional.
 
 Pregunta del usuario:
-
 ${pregunta}
-`
+                `
+              }
+            ]
+          }
+        ]
+      })
     });
 
-    return new Response(
-      JSON.stringify({
-        respuesta: respuesta.text
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    const data = await response.json();
+
+    const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta";
+
+    return new Response(JSON.stringify({
+      respuesta: texto
+    }), {
+      headers: { "Content-Type": "application/json" }
+    });
 
   } catch (error) {
 
-    return new Response(
-      JSON.stringify({
-        error: error.message
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    return new Response(JSON.stringify({
+      respuesta: "Error en la IA"
+    }), {
+      headers: { "Content-Type": "application/json" }
+    });
 
   }
+
 };

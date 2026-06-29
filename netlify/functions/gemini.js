@@ -7,7 +7,7 @@ export async function handler(event) {
     const API_KEY = process.env.GEMINI_API_KEY;
 
     const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
       API_KEY;
 
     const res = await fetch(url, {
@@ -21,7 +21,7 @@ export async function handler(event) {
             parts: [
               {
                 text: `
-Eres un asistente experto en contratos hospitalarios.
+Eres un asistente experto en gestión de contratos hospitalarios.
 
 Responde claro y breve.
 

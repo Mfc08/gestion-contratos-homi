@@ -7,10 +7,10 @@ export async function handler(event) {
     const API_KEY = process.env.GEMINI_API_KEY;
 
     const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
       API_KEY;
 
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -21,9 +21,9 @@ export async function handler(event) {
             parts: [
               {
                 text: `
-Eres un asistente experto en gestión de contratos hospitalarios.
+Eres un asistente experto en contratos hospitalarios.
 
-Responde claro, útil y breve.
+Responde claro y breve.
 
 Pregunta:
 ${pregunta}
@@ -35,24 +35,22 @@ ${pregunta}
       })
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    console.log("GEMINI RESPONSE:", JSON.stringify(data));
+    console.log("GEMINI RAW:", JSON.stringify(data));
 
     const respuesta =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       data?.error?.message ||
-      "No se pudo obtener respuesta de Gemini";
+      "No se pudo obtener respuesta";
 
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ respuesta })
     };
 
-  } catch (error) {
+  } catch (err) {
 
     return {
       statusCode: 500,

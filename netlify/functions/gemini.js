@@ -7,13 +7,13 @@ export async function handler(event) {
     const API_KEY = process.env.GEMINI_API_KEY;
 
     const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
-      API_KEY;
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-goog-api-key": API_KEY
       },
       body: JSON.stringify({
         contents: [
@@ -42,7 +42,7 @@ ${pregunta}
     const respuesta =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       data?.error?.message ||
-      "No se pudo obtener respuesta";
+      "Sin respuesta";
 
     return {
       statusCode: 200,

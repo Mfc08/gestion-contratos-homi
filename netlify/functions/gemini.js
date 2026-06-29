@@ -21,17 +21,14 @@ export async function handler(event) {
             parts: [
               {
                 text: `
-Eres un asistente experto en gestión de contratos hospitalarios.
+Eres un asistente de contratos hospitalarios.
 
-REGLAS:
-- Usa los contratos que te doy abajo.
-- Calcula días de vencimiento si es necesario.
-- Responde claro y corto.
-
-CONTRATOS:
+Usa estos datos:
 ${JSON.stringify(contratos)}
 
-PREGUNTA:
+Responde claro.
+
+Pregunta:
 ${pregunta}
                 `
               }
@@ -43,14 +40,15 @@ ${pregunta}
 
     const data = await res.json();
 
+    console.log("GEMINI RESPONSE:", JSON.stringify(data));
+
     const respuesta =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      data?.error?.message ||
-      "Sin respuesta";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+      data?.error?.message ??
+      "Sin respuesta de la IA";
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ respuesta })
     };
 
@@ -59,9 +57,10 @@ ${pregunta}
     return {
       statusCode: 500,
       body: JSON.stringify({
-        respuesta: "Error en función Gemini"
+        respuesta: "Error en backend"
       })
     };
 
   }
+
 }
